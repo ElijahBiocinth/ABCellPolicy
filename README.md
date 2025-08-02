@@ -30,7 +30,7 @@ Although bright-field microscopy is one of the simplest and least invasive metho
 
 <h3>
   2. Deriving the A/B Cells Policy as a Reinforcement Learning Successor Feature.
-  <img src="./assets/spinner.gif" 
+  <img src="./assets/spinner (1).gif" 
        alt="spinner gif" 
        width="32" 
        align="top" 
@@ -41,7 +41,7 @@ We introduce a diffusion transformer-like world model that maps high-dimensional
 
 <h3>
   3. Deriving the A/B Cells Policy as a Сell-Сhip Implementation.
-  <img src="./assets/spinner.gif" 
+  <img src="./assets/spinner (1).gif" 
        alt="spinner gif" 
        width="32" 
        align="top" 
