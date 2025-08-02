@@ -3,15 +3,34 @@ import math
 from scipy.optimize import linear_sum_assignment
 from collections import defaultdict
 from shapely.ops import unary_union
+
 from .config import (
-    BASE_IOU_MATCH, SOFT_IOU_MIN, SOFT_IOU_MIN_RELAX,
-    DIST_GATE_FACTOR, RELAX_DIST_MULT, MAX_COST_CAP,
-    ADAPTIVE_COST_MULT, ADAPTIVE_COST_OFFSET, MIN_MATCH_RATIO,
-    K_INIT, EARLY_ZERO_MATCH_LIMIT, CENTROID_FALLBACK_MAX_DIST_MULT,
-    CONTINUITY_TARGET, MAX_RECOVERY_PASSES, RECOVERY_GATE_MULT,
-    RECOVERY_FEATURE_THRESH, RECOVERY_SHAPE_THRESH,
-    GREEDY_MAX_DIST_MULT, GREEDY_FEATURE_THRESH, GREEDY_SHAPE_THRESH,
-    SPLIT_IOU_THRESH, MERGE_IOU_THRESH
+    BASE_IOU_MATCH,
+    SOFT_IOU_MIN,
+    SOFT_IOU_MIN_RELAX,
+    DIST_GATE_FACTOR,
+    RELAX_DIST_MULT,
+    MAX_COST_CAP,
+    APPEARANCE_WEIGHT,
+    IOU_WEIGHT,
+    DIST_WEIGHT,
+    SHAPE_WEIGHT,
+    ADAPTIVE_COST_MULT,
+    ADAPTIVE_COST_OFFSET,
+    MIN_MATCH_RATIO,
+    K_INIT,
+    EARLY_ZERO_MATCH_LIMIT,
+    CENTROID_FALLBACK_MAX_DIST_MULT,
+    CONTINUITY_TARGET,
+    MAX_RECOVERY_PASSES,
+    RECOVERY_GATE_MULT,
+    RECOVERY_FEATURE_THRESH,
+    RECOVERY_SHAPE_THRESH,
+    GREEDY_MAX_DIST_MULT,
+    GREEDY_FEATURE_THRESH,
+    GREEDY_SHAPE_THRESH,
+    SPLIT_IOU_THRESH,
+    MERGE_IOU_THRESH,
 )
 from .geometry import compute_iou, centroid
 from .features import feature_distance, shape_distance
@@ -29,7 +48,10 @@ def build_cost_matrix(tracks, new_polys, new_feats, frame_idx, relax=False):
     if not tracks or not new_polys:
         return C, raw_costs, None
     weights = current_weights(frame_idx)
-    iou_w = weights['IOU']; dist_w = weights['DIST']; app_w = weights['APP']; shape_w = weights['SHAPE']
+    iou_w = weights['IOU']
+    dist_w = weights['DIST']
+    app_w = weights['APP']
+    shape_w = weights['SHAPE']
     soft_min_iou = SOFT_IOU_MIN_RELAX if relax else SOFT_IOU_MIN
     for i, tr in enumerate(tracks):
         p1 = tr.poly
@@ -40,7 +62,7 @@ def build_cost_matrix(tracks, new_polys, new_feats, frame_idx, relax=False):
             if iou < soft_min_iou:
                 continue
             c2 = centroid(p2)
-            base_gate = max(15.0, DIST_GATE_FACTOR * (math.sqrt(p1.area) + 0.3*math.hypot(*tr.vel)))
+            base_gate = max(15.0, DIST_GATE_FACTOR * (math.sqrt(p1.area) + 0.3 * math.hypot(*tr.vel)))
             gate = base_gate * (RELAX_DIST_MULT if relax else 1.0)
             char_len = math.sqrt(p1.area)
             gate = min(gate, 2.0 * char_len)
@@ -100,7 +122,8 @@ def centroid_fallback(tracks, new_polys):
     used_new = set()
     for i, tr in enumerate(tracks):
         c_pred = tr.predict_centroid()
-        best = None; best_j = None
+        best = None
+        best_j = None
         gate = max(30.0, CENTROID_FALLBACK_MAX_DIST_MULT * math.sqrt(tr.poly.area))
         for j, p in enumerate(new_polys):
             if j in used_new:
@@ -108,7 +131,8 @@ def centroid_fallback(tracks, new_polys):
             c2 = centroid(p)
             d = math.hypot(c_pred[0] - c2[0], c_pred[1] - c2[1])
             if d <= gate and (best is None or d < best):
-                best = d; best_j = j
+                best = d
+                best_j = j
         if best_j is not None:
             matches.append((i, best_j, best / gate))
             used_new.add(best_j)
@@ -116,14 +140,17 @@ def centroid_fallback(tracks, new_polys):
 
 def recovery_pass_expand(tracks, new_polys, new_feats, frame_idx,
                          unmatched_track_indices, unmatched_new_indices, pass_id):
-    matches = []; used_new = set()
+    matches = []
+    used_new = set()
     if pass_id == 0:
         for ti in unmatched_track_indices:
             tr = tracks[ti]
-            p1 = tr.poly; c_pred = tr.predict_centroid()
-            base_gate = max(15.0, DIST_GATE_FACTOR * (math.sqrt(p1.area) + 0.3*math.hypot(*tr.vel)))
+            p1 = tr.poly
+            c_pred = tr.predict_centroid()
+            base_gate = max(15.0, DIST_GATE_FACTOR * (math.sqrt(p1.area) + 0.3 * math.hypot(*tr.vel)))
             gate = base_gate * RECOVERY_GATE_MULT
-            best = None; best_j = None
+            best = None
+            best_j = None
             for j in unmatched_new_indices:
                 p2 = new_polys[j]
                 c2 = centroid(p2)
@@ -137,22 +164,27 @@ def recovery_pass_expand(tracks, new_polys, new_feats, frame_idx,
                 sd = shape_distance(p1, p2)
                 if sd > RECOVERY_SHAPE_THRESH:
                     continue
-                cost = 0.6*dist_norm + 0.25*fd + 0.15*sd
+                cost = 0.6 * dist_norm + 0.25 * fd + 0.15 * sd
                 if best is None or cost < best:
-                    best = cost; best_j = j
+                    best = cost
+                    best_j = j
             if best_j is not None:
-                matches.append((ti, best_j, best)); used_new.add(best_j)
+                matches.append((ti, best_j, best))
+                used_new.add(best_j)
     else:
         ordering = sorted(unmatched_track_indices, key=lambda i: (tracks[i].missed, -tracks[i].age))
         for ti in ordering:
             tr = tracks[ti]
-            p1 = tr.poly; c_pred = tr.predict_centroid()
+            p1 = tr.poly
+            c_pred = tr.predict_centroid()
             gate = max(30.0, GREEDY_MAX_DIST_MULT * math.sqrt(p1.area))
-            best = None; best_j = None
+            best = None
+            best_j = None
             for j in unmatched_new_indices:
                 if j in used_new:
                     continue
-                p2 = new_polys[j]; c2 = centroid(p2)
+                p2 = new_polys[j]
+                c2 = centroid(p2)
                 dist = math.hypot(c_pred[0] - c2[0], c_pred[1] - c2[1])
                 if dist > gate:
                     continue
@@ -163,56 +195,60 @@ def recovery_pass_expand(tracks, new_polys, new_feats, frame_idx,
                 sd = shape_distance(p1, p2)
                 if sd > GREEDY_SHAPE_THRESH:
                     continue
-                cost = 0.55*dist_norm + 0.30*fd + 0.15*sd
+                cost = 0.55 * dist_norm + 0.30 * fd + 0.15 * sd
                 if best is None or cost < best:
-                    best = cost; best_j = j
+                    best = cost
+                    best_j = j
             if best_j is not None:
-                matches.append((ti, best_j, best)); used_new.add(best_j)
+                matches.append((ti, best_j, best))
+                used_new.add(best_j)
     return matches
 
 def merge_matches(primary, secondary):
-    track_best = {}; det_used = set()
+    track_best = {}
+    det_used = set()
     for t, d, c in primary:
-        track_best[t] = (d, c); det_used.add(d)
+        track_best[t] = (d, c)
+        det_used.add(d)
     for t, d, c in secondary:
         if d in det_used and t not in track_best:
             continue
         if t not in track_best:
             if d not in det_used:
-                track_best[t] = (d, c); det_used.add(d)
+                track_best[t] = (d, c)
+                det_used.add(d)
         else:
             d0, c0 = track_best[t]
             if c < c0 and (d == d0 or d not in det_used):
                 if d != d0:
-                    det_used.discard(d0); det_used.add(d)
+                    det_used.discard(d0)
+                    det_used.add(d)
                 track_best[t] = (d, c)
     return [(t, d, c) for t, (d, c) in track_best.items()], 0
 
 def assign_tracks_two_stage(tracks, new_polys, new_feats, frame_idx):
     C_strict, _, _ = build_cost_matrix(tracks, new_polys, new_feats, frame_idx, relax=False)
     matches_strict = solve_assignment(C_strict)
-    used_relax = False; matches = matches_strict
-    if frame_idx < K_INIT and not matches:
-        C_relax_early, _, _ = build_cost_matrix(tracks, new_polys, new_feats, frame_idx, relax=True)
-        early_relax = solve_assignment(C_relax_early)
-        if early_relax:
-            matches = early_relax; used_relax = True
+    used_relax = False
+    matches = matches_strict
     if tracks and len(matches) < MIN_MATCH_RATIO * len(tracks):
         C_relax, _, _ = build_cost_matrix(tracks, new_polys, new_feats, frame_idx, relax=True)
         relax_matches = solve_assignment(C_relax)
         if len(relax_matches) > len(matches):
-            matches = relax_matches; used_relax = True
+            matches = relax_matches
+            used_relax = True
     if tracks and not matches and frame_idx < (K_INIT + EARLY_ZERO_MATCH_LIMIT):
         cf = centroid_fallback(tracks, new_polys)
         if cf:
-            matches = cf; used_relax = True
-    prev = len(tracks); matched = {t for t, _, _ in matches}
-    continuity = len(matched)/prev if tracks else 1.0
+            matches = cf
+            used_relax = True
+    prev = len(tracks)
+    matched = {t for t, _, _ in matches}
+    continuity = len(matched) / prev if tracks else 1.0
     recovery_passes = 0
     if continuity < CONTINUITY_TARGET and tracks:
         unmatched_t = [i for i in range(len(tracks)) if i not in matched]
-        matched_new = {d for _, d, _ in matches}
-        unmatched_n = [j for j in range(len(new_polys)) if j not in matched_new]
+        unmatched_n = [j for j in range(len(new_polys)) if j not in {d for _, d, _ in matches}]
         for pid in range(MAX_RECOVERY_PASSES):
             if continuity >= CONTINUITY_TARGET:
                 break
@@ -221,10 +257,9 @@ def assign_tracks_two_stage(tracks, new_polys, new_feats, frame_idx):
                 merged, _ = merge_matches(matches, rec)
                 matches = merged
                 matched = {t for t, _, _ in matches}
-                matched_new = {d for _, d, _ in matches}
                 unmatched_t = [i for i in range(len(tracks)) if i not in matched]
-                unmatched_n = [j for j in range(len(new_polys)) if j not in matched_new]
-                continuity = len(matched)/prev if tracks else 1.0
+                unmatched_n = [j for j in range(len(new_polys)) if j not in {d for _, d, _ in matches}]
+                continuity = len(matched) / prev if tracks else 1.0
                 recovery_passes = pid + 1
     unmatched_new = [j for j in range(len(new_polys)) if j not in {d for _, d, _ in matches}]
     costs = [c for *_, c in matches]
@@ -232,10 +267,13 @@ def assign_tracks_two_stage(tracks, new_polys, new_feats, frame_idx):
     return matches, unmatched_new, costs, median_cost, used_relax, continuity, recovery_passes
 
 def detect_splits_merges(tracks, new_polys, matches):
-    old2new = defaultdict(list); new2old = defaultdict(list)
+    old2new = defaultdict(list)
+    new2old = defaultdict(list)
     for r, c, _ in matches:
-        old2new[r].append(c); new2old[c].append(r)
-    splits = []; merges = []
+        old2new[r].append(c)
+        new2old[c].append(r)
+    splits = []
+    merges = []
     for r, new_ids in old2new.items():
         if len(new_ids) > 1:
             try:

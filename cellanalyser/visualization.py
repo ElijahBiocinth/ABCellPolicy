@@ -173,30 +173,48 @@ def plot_track_dynamic_matrix(tracks_df: pd.DataFrame, out_dir: str):
     plt.savefig(os.path.join(out_dir, 'track_dynamic_matrix.png'), dpi=300)
     plt.close()
 
-def plot_friedman_scene_heatmap(pair_sig: dict, scenes: list, frames: list,
-                                metric: str, window: str, out_dir: str):
-    k = len(scenes)
-    n_frames = len(frames)
-    counts = np.zeros((k, n_frames), int)
-    for (i, j), arr in pair_sig.items():
-        for t, sig in enumerate(arr):
-            if sig:
-                counts[i, t] += 1
-                counts[j, t] += 1
+def plot_friedman_two_heatmaps(pair_sig_ma, pair_sig_raw,
+                               scenes, frames, metric, out_dir):
+    """
+    Две тепловые карты (#сигн. пар) для MA (сверху) и RAW (снизу).
+    """
+    def _make_counts(sigdict):
+        counts = np.zeros((len(scenes), len(frames)), int)
+        for (i, j), arr in sigdict.items():
+            for t, sig in enumerate(arr):
+                if sig:
+                    counts[i, t] += 1
+                    counts[j, t] += 1
+        return pd.DataFrame(counts, index=scenes, columns=frames)
 
-    df_cnt = pd.DataFrame(counts, index=scenes, columns=frames)
-    df_cnt.index.name = 'scene'
-    df_cnt.to_csv(os.path.join(out_dir, f'{metric}_{window.lower()}_scene_sig_counts.csv'))
-    plt.figure(figsize=(max(10, n_frames*0.04), max(3, k*0.45)))
-    ax = sns.heatmap(df_cnt, cmap='magma', cbar=True, linewidths=0.3)
-    ax.set_xlabel('Frame')
-    ax.set_ylabel('Scene')
-    plt.title(f'# significant pairs – {metric} ({window})')
+    df_ma  = _make_counts(pair_sig_ma)
+    df_raw = _make_counts(pair_sig_raw)
+    vmax   = max(df_ma.values.max(), df_raw.values.max())
+
+    fig, axes = plt.subplots(
+        nrows=2, ncols=1,
+        figsize=(max(10, len(frames)*0.04), 2 * len(scenes) * 0.45),
+        sharex=True
+    )
+    for ax, (lbl, dfc) in zip(axes, [('MA', df_ma), ('RAW', df_raw)]):
+        sns.heatmap(dfc, ax=ax, cmap='magma',
+                    cbar=True, linewidths=0.3,
+                    vmin=0, vmax=vmax)
+        ax.set_ylabel('Scene', fontsize=10)
+        ax.set_title(f'# significant pairs – {metric} ({lbl})', fontsize=12)
+        ax.set_xlabel('' if lbl=='MA' else 'Frame')
     plt.tight_layout()
-    plt.savefig(os.path.join(out_dir, f'{metric}_{window.lower()}_scene_heatmap.png'), dpi=300)
+    plt.savefig(os.path.join(out_dir, f'{metric}_friedman_heatmaps.png'), dpi=300)
     plt.close()
 
-def plot_overall_friedman_heatmaps(pair_rows: list, scenes: list, frames: list, out_dir: str):
+def plot_overall_friedman_heatmaps(pair_rows: list,
+                                   scenes: list,
+                                   frames: list,
+                                   out_dir: str):
+    """
+    Общий тепломап по всем метрикам:
+    сверху – MA, снизу – RAW.
+    """
     df = pd.DataFrame(pair_rows)
     fig, axes = plt.subplots(
         nrows=2, ncols=1,
@@ -204,7 +222,7 @@ def plot_overall_friedman_heatmaps(pair_rows: list, scenes: list, frames: list, 
         sharex=True
     )
     for wi, window in enumerate(['MA', 'RAW']):
-        ax = axes[wi]
+        ax  = axes[wi]
         sub = df[df['window_type']==window]
         counts = pd.DataFrame(0, index=scenes, columns=frames)
         for _, row in sub.iterrows():
@@ -215,22 +233,16 @@ def plot_overall_friedman_heatmaps(pair_rows: list, scenes: list, frames: list, 
             j = row['scene_j']
             counts.at[i, t] += 1
             counts.at[j, t] += 1
+
         sns.heatmap(
-            counts,
-            ax=ax,
-            cmap='magma',
-            cbar=True,
-            vmin=0,
-            vmax=counts.values.max(),
+            counts, ax=ax, cmap='magma',
+            cbar=True, vmin=0, vmax=counts.values.max(),
             xticklabels=max(1, int(len(frames)/10)),
             yticklabels=scenes
         )
         ax.set_ylabel('Scene', fontsize=10)
         ax.set_title(f'All metrics ({window})', fontsize=12)
-        if wi == 1:
-            ax.set_xlabel('Frame', fontsize=10)
-        else:
-            ax.set_xlabel('')
+        ax.set_xlabel('Frame' if wi==1 else '')
     plt.tight_layout()
     plt.savefig(os.path.join(out_dir, 'overall_friedman_heatmaps.png'), dpi=300)
     plt.close()

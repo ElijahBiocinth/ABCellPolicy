@@ -1,6 +1,7 @@
 import numpy as np
 from shapely.geometry import Polygon
 from shapely.errors import TopologicalError
+from .config import MIN_AREA, SIMPLIFY_TOL
 
 def safe_polygon(coords):
     try:
