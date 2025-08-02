@@ -1,18 +1,19 @@
 import cv2
 from ultralytics import YOLO
 from .base import BaseDetector
-
+import numpy as np
 class YoloDetector(BaseDetector):
     def __init__(self, model_path: str, device: str):
         self.model = YOLO(model_path)
         dev = device if not device.isdigit() else f"cuda:{device}"
+        print(f"[YoloDetector] loading on device = {dev}")
         self.model.to(dev)
 
-    def detect(self, tile_img):
+    def detect(self, tile_img: np.ndarray) -> list[np.ndarray]:
         results = self.model.predict(source=tile_img, verbose=False, save=False)
-        masks = []
+        coords = []
         for r in results:
             if hasattr(r, "masks") and r.masks is not None:
-                for coords in r.masks.xy:
-                    masks.append(coords)
-        return masks
+                for xy in r.masks.xy:
+                    coords.append(xy.astype("int32"))
+        return coords

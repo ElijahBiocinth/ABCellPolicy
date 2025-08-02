@@ -1,20 +1,24 @@
 import argparse
 from pathlib import Path
-from celltracker.config import DEFAULT_DB_PATH, DEBUG_FIRST_N_FRAMES
+from celltracker.config import DEFAULT_DB_PATH, DEBUG_FIRST_N_FRAMES, DEFAULT_BACKEND
+
 from celltracker.pipeline import run_pipeline
 
 def parse_args():
     parser = argparse.ArgumentParser(description="Run cell tracking pipeline")
     parser.add_argument(
-        "--db", type=Path, default=Path(DEFAULT_DB_PATH),
+        "--db", type=Path,
+        default=Path(DEFAULT_DB_PATH).expanduser(),
         help="Path to SQLite database (default: config.DEFAULT_DB_PATH)"
     )
     parser.add_argument(
         "--src", type=Path, required=True,
         help="Path to source image folder"
     )
-    parser.add_argument("--model", type=Path, default=None,
-                        help="Path to YOLO model weights file (not for CellPose)")
+    parser.add_argument(
+        "--model", type=Path, required=True,
+        help="Path to YOLO model weights file"
+    )
     parser.add_argument(
         "--out", type=Path, default=None,
         help="Output folder for annotated images"
@@ -37,14 +41,11 @@ def parse_args():
     )
     parser.add_argument(
         "--backend", type=str, choices=["yolo","cellpose"],
-        default="yolo",
+        default=DEFAULT_BACKEND,
         help="Which detector to use: 'yolo' or 'cellpose'"
     )
     return parser.parse_args()
 
 if __name__ == "__main__":
     args = parse_args()
-    if args.backend == "yolo" and args.model is None:
-        raise ValueError("--model - backend=yolo")
-    args.model = args.model or ""
     run_pipeline(args)
