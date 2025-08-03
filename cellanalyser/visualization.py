@@ -183,13 +183,15 @@ def plot_friedman_all_metrics_heatmaps(pair_rows: list,
     windows = ['MA', 'RAW']
     n_metrics = len(metrics)
     n_frames = len(frames)
-    fig, axes = plt.subplots(n_metrics, 2,
-                             figsize=(max(10, n_frames * 0.04) * 2,
+
+    fig, axes = plt.subplots(n_metrics * 2, 1,
+                             figsize=(max(10, n_frames * 0.04),
                                       n_metrics * 2),
-                             sharex='col')
+                             sharex=True)
+
     for mi, metric in enumerate(metrics):
         for wi, window in enumerate(windows):
-            ax = axes[mi, wi] if n_metrics > 1 else axes[wi]
+            ax = axes[mi*2 + wi] if n_metrics > 1 else axes[wi]
             sub = df[(df['metric'] == metric) & (df['window_type'] == window)]
             counts = np.zeros((len(scenes), n_frames), int)
             for _, row in sub.iterrows():
@@ -205,11 +207,12 @@ def plot_friedman_all_metrics_heatmaps(pair_rows: list,
                 df_cnt,
                 ax=ax,
                 cmap='magma',
-                cbar=(wi == 1),
+                cbar=False,
                 linewidths=0.1,
                 linecolor='white'
             )
-            desired = 40
+
+            desired = 10
             step = max(1, n_frames // desired)
             ticks = list(range(0, n_frames, step))
             labels = [frames[i] for i in ticks]
@@ -218,16 +221,19 @@ def plot_friedman_all_metrics_heatmaps(pair_rows: list,
             ax.set_yticklabels(scenes)
             ax.tick_params(axis='x', labelsize=12)
             ax.tick_params(axis='y', labelsize=12)
+            ax.set_ylabel('Scene', fontsize=12)
             ax.set_title(f'{metric} ({window})', fontsize=14)
-            
-            if mi == n_metrics - 1:
-                ax.set_xlabel('Frame', fontsize=12)
-            else:
-                ax.set_xlabel('')
-            if wi == 0:
-                ax.set_ylabel('Scene', fontsize=12)
 
-    plt.tight_layout()
+    fig.subplots_adjust(right=0.85)
+    cax = fig.add_axes([0.87, 0.15, 0.02, 0.7])
+    sns.heatmap(
+        pd.DataFrame(np.zeros((1,1))),
+        cbar=True, cbar_ax=cax, cmap='magma',
+        norm=plt.Normalize(vmin=0, vmax=df_cnt.values.max())
+    )
+    cax.set_ylabel('# significant pairs', fontsize=12)
+
+    plt.tight_layout(rect=[0,0,0.85,1])
     plt.savefig(os.path.join(out_dir, 'friedman_all_metrics.png'), dpi=500)
     plt.close()
 
