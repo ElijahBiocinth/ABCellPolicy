@@ -209,7 +209,7 @@ def plot_friedman_all_metrics_heatmaps(pair_rows: list,
                 linewidths=0.1,
                 linecolor='white'
             )
-            desired = 10
+            desired = 40
             step = max(1, n_frames // desired)
             ticks = list(range(0, n_frames, step))
             labels = [frames[i] for i in ticks]
