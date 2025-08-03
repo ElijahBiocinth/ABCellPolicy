@@ -17,15 +17,15 @@ def main():
 
     config.DB_PATHS.clear()
     config.DB_PATHS.update(args.db_paths)
-    config.OUT_DIR = args.out_dir
-    config.PX_TO_UM = args.px_to_um
-    config.FRAME_DT = args.frame_dt
-    config.SMOOTH_WINDOW = args.smooth_window
-    config.ALPHA_TEST = args.alpha_test
-    config.PERFORM_STATS = args.perform_stats
-    config.N_THREADS = args.n_threads
+    config.OUT_DIR        = args.out_dir
+    config.PX_TO_UM       = args.px_to_um
+    config.FRAME_DT       = args.frame_dt
+    config.SMOOTH_WINDOW  = args.smooth_window
+    config.ALPHA_TEST     = args.alpha_test
+    config.PERFORM_STATS  = args.perform_stats
+    config.N_THREADS      = args.n_threads
 
     run_pipeline()
 
-if __name__ == '__main__':
+if __name__=='__main__':
     main()

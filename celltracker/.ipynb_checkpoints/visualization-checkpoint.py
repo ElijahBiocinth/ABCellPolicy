@@ -7,6 +7,7 @@ def draw_tracks(image: np.ndarray, tracks, thickness=2, draw_id=True) -> np.ndar
         color = tr.display_color if hasattr(tr, 'display_color') else get_track_color(tr.id)
         pts = np.array([[int(x), int(y)] for x, y in tr.poly.exterior.coords], dtype=np.int32)
         cv2.polylines(image, [pts], True, color, thickness)
+        
         if draw_id:
             cx, cy = tr.history[-1]
             label = f"{tr.id}"
@@ -22,4 +23,5 @@ def draw_tracks(image: np.ndarray, tracks, thickness=2, draw_id=True) -> np.ndar
                 1,
                 cv2.LINE_AA
             )
+            
     return image

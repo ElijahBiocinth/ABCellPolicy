@@ -1,5 +1,4 @@
 DB_PATHS = {}
-
 OUT_DIR = ''
 PX_TO_UM = 0.519933
 FRAME_DT = 350.0

@@ -9,4 +9,5 @@ def get_track_color(track_id: int) -> Tuple[int, int, int]:
         g = 64 + ((h >> 8)  & 0xFF) // 2
         b = 64 + ((h >> 16) & 0xFF) // 2
         TRACK_COLOR_MAP[track_id] = (int(b), int(g), int(r))
+        
     return TRACK_COLOR_MAP[track_id]

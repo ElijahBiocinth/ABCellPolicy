@@ -64,12 +64,15 @@ def auto_detect_pattern(image_dir: str, sample_size: int = 200):
                 parsed.append((pref, len(nums), suff, int(nums)))
         if parsed:
             break
+            
     if not parsed:
         raise RuntimeError("Cannot detect filename pattern")
+        
     pref = Counter(p[0] for p in parsed).most_common(1)[0][0]
     digs = Counter(p[1] for p in parsed).most_common(1)[0][0]
     suff = Counter(p[2] for p in parsed).most_common(1)[0][0]
     min_idx = min(p[3] for p in parsed)
+    
     return pref, digs, suff, min_idx
 
 def build_filename(prefix, digs, suff, offset, frame):
@@ -80,6 +83,7 @@ def stable_color_for_id(uid) -> Tuple[int, int, int]:
     h = hashlib.sha1(str(uid).encode()).hexdigest()[:6]
     r, g, b = int(h[0:2], 16), int(h[2:4], 16), int(h[4:6], 16)
     boost = 0.35
+    
     return (
         int((1 - boost) * b + boost * 255),
         int((1 - boost) * g + boost * 255),
@@ -99,34 +103,42 @@ def decode_polygon(js: str) -> Optional[np.ndarray]:
 def fit_ellipse_metrics(arr_pts: np.ndarray) -> Tuple[float, float]:
     if arr_pts.shape[0] < 5:
         return np.nan, np.nan
+        
     (cx, cy), (w, h), angle = cv2.fitEllipse(arr_pts.astype(np.float32))
     major, minor = (h, w) if h > w else (w, h)
     ecc = math.sqrt(max(0, 1 - (minor / major) ** 2)) if major > 0 else np.nan
     ori = (angle + (90 if h > w else 0)) % 180
+    
     return ecc, ori
 
 def polygon_metrics(arr_pts: np.ndarray, px_to_um2: float, px_to_um: float) -> Tuple[float, float, float, float]:
     poly = Polygon(arr_pts)
+    
     if not poly.is_valid:
         poly = poly.buffer(0)
     if poly.is_empty:
         return np.nan, np.nan, np.nan, np.nan
     if isinstance(poly, MultiPolygon):
         poly = max(poly.geoms, key=lambda p: p.area)
+        
     area_px = poly.area
     peri_px = poly.length
     area = area_px * px_to_um2
     peri = peri_px * px_to_um
     circ = (4 * math.pi * area) / (peri ** 2) if peri > 0 else np.nan
     ecc, ori = fit_ellipse_metrics(np.array(poly.exterior.coords, dtype=np.int32))
+    
     return area, ecc, ori, circ
 
 def mean_orientation_deg(angles: List[float]) -> float:
     ang = np.array([a for a in angles if not np.isnan(a)])
+    
     if ang.size == 0:
         return np.nan
+        
     theta = np.deg2rad(ang) * 2
     mv = np.exp(1j * theta).mean()
+    
     return (np.rad2deg(np.angle(mv)) / 2) % 180
 
 def draw_text_with_bg(
@@ -147,6 +159,7 @@ def draw_text_with_bg(
     pil_img = Image.fromarray(rgb).convert("RGBA")
     draw = ImageDraw.Draw(pil_img)
     current_size = font_size
+    
     if font_path:
         try:
             font = ImageFont.truetype(font_path, current_size)
@@ -162,9 +175,11 @@ def draw_text_with_bg(
         except AttributeError:
             w, h = draw.textsize(text, font=fnt)
         return w, h
+        
     text_w, text_h = measure(font)
     target_w = None if max_width is None else max_width - 2 * pad_x
     target_h = None if max_height is None else max_height - 2 * pad_y
+    
     if target_w is not None and font_path:
         while text_w < target_w * 0.9 and (target_h is None or text_h < target_h):
             next_size = current_size + 1
@@ -180,6 +195,7 @@ def draw_text_with_bg(
             current_size = next_size
             font = next_font
             text_w, text_h = next_w, next_h
+            
     if target_w is not None:
         while text_w > target_w and current_size > MIN_FONT_SIZE:
             current_size -= 1
@@ -191,6 +207,7 @@ def draw_text_with_bg(
             else:
                 font = ImageFont.load_default()
             text_w, text_h = measure(font)
+            
     if target_h is not None:
         while text_h > target_h and current_size > MIN_FONT_SIZE:
             current_size -= 1
@@ -202,6 +219,7 @@ def draw_text_with_bg(
             else:
                 font = ImageFont.load_default()
             text_w, text_h = measure(font)
+            
     rect_w = int(text_w + 2 * pad_x)
     rect_h = int(text_h + 2 * pad_y)
     corner_radius = max(4, rect_h // 4)
@@ -211,6 +229,7 @@ def draw_text_with_bg(
     pil_img.alpha_composite(bg_layer, dest=(x, y))
     draw.text((x + pad_x, y + pad_y), text, font=font, fill=fg)
     out_rgb = np.array(pil_img.convert("RGB"))
+    
     return cv2.cvtColor(out_rgb, cv2.COLOR_RGB2BGR)
 
 def main():
@@ -229,13 +248,16 @@ def main():
     px2um = args.px_to_um
     px2um2 = px2um ** 2
     first_img = None
+    
     for f in frames:
         p = os.path.join(args.image_dir, build_filename(prefix, digs, suff, offset, f))
         if os.path.isfile(p):
             first_img = cv2.imread(p)
             break
+            
     if first_img is None:
         raise FileNotFoundError("No sample image found")
+        
     H, W = first_img.shape[:2]
     vw = cv2.VideoWriter(mp4_path, cv2.VideoWriter_fourcc(*"mp4v"), args.fps, (W, H))
     cw, ch = int(0.75 * W), int(0.07 * H)
@@ -244,8 +266,10 @@ def main():
     base_font_size = int(18 * (W / 1024))
     base_font_size = max(MIN_FONT_SIZE, base_font_size)
     limit_h = int(available_text_height * 0.9)
+    
     if base_font_size > limit_h:
         base_font_size = max(MIN_FONT_SIZE, limit_h)
+        
     area_unit = "\u00B5m\u00B2"
     for f in tqdm(frames, desc="Rendering"):
         img_p = os.path.join(args.image_dir, build_filename(prefix, digs, suff, offset, f))
@@ -268,6 +292,7 @@ def main():
             col = stable_color_for_id(uid)
             cv2.fillPoly(overlay, [pts], col)
             cv2.polylines(overlay, [pts], True, (255, 255, 255), args.contour_thick)
+            
         blended = cv2.addWeighted(overlay, args.alpha, base, 1 - args.alpha, 0)
         mean_area = np.nanmean(areas) if areas else np.nan
         mean_ecc = np.nanmean(eccs) if eccs else np.nan

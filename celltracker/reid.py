@@ -31,6 +31,7 @@ def increment_reid_age():
         rec["age_gap"] += 1
         if rec["age_gap"] > REID_MAX_AGE_GAP:
             drop.append(rec)
+            
     for rec in drop:
         REID_BUFFER.remove(rec)
 
@@ -40,17 +41,22 @@ def reid_try(p, feat):
     best = None
     for rec in REID_BUFFER:
         dpos = math.hypot(c[0] - rec["last_pos"][0], c[1] - rec["last_pos"][1])
+        
         if dpos > REID_POS_DIST:
             continue
         if not (REID_MIN_AREA_RATIO * rec["last_area"] <= p.area <= REID_MAX_AREA_RATIO * rec["last_area"]):
             continue
+            
         fd = feature_distance(rec["feat"], feat)
         area_ratio = abs(p.area - rec["last_area"]) / max(p.area, rec["last_area"], 1e-9)
         score = fd + 0.5 * area_ratio + 0.002 * dpos
+        
         if best is None or score < best[0]:
             best = (score, rec["id"], dpos, fd, area_ratio)
+            
     if best and best[0] < REID_SCORE_THRESH:
         if PRINT_REID_MATCHES:
             print(f"[REID] id={best[1]} score={best[0]:.3f} dpos={best[2]:.1f} fd={best[3]:.3f} ar={best[4]:.3f}")
         return best[1]
+        
     return None

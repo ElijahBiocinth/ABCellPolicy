@@ -74,6 +74,7 @@ PRINT_COST_STATS: bool            = True
 PRINT_REID_MATCHES: bool          = True
 PRINT_ASSIGN_DBG: bool            = True
 DEFAULT_BACKEND: str              = "yolo"
+
 try:
     from numba import njit
     _NUMBA = True

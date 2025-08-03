@@ -5,13 +5,35 @@ _start_time = None
 _smooth_frame_time = None
 _prev_progress_len = 0
 
+def format_duration(sec: float, order: str = "h_m") -> str:
+    if sec is None or sec <= 0 or math.isinf(sec) or math.isnan(sec):
+        return "--"
+    h = int(sec // 3600)
+    m = int((sec % 3600) // 60)
+    s = int(sec % 60)
+
+    parts = []
+    if order == "m_h":
+        if m:
+            parts.append(f"{m}m")
+        if h:
+            parts.append(f"{h}h")
+    else:  
+        if h:
+            parts.append(f"{h}h")
+        if m:
+            parts.append(f"{m}m")
+
+    if h == 0 and m == 0:
+        parts.append(f"{s}s")
+
+    return " ".join(parts) if parts else "0s"
+
 def format_eta(eta_sec: float) -> str:
     if eta_sec <= 0 or math.isinf(eta_sec) or math.isnan(eta_sec):
         return "--"
     if eta_sec >= 3600:
-        h = int(eta_sec // 3600)
-        m = int((eta_sec % 3600) // 60)
-        return f"{h}h {m}m"
+        return format_duration(eta_sec, order="h_m")
     if eta_sec >= 120:
         return f"{int(eta_sec // 60)}m {int(eta_sec % 60)}s"
     if eta_sec >= 60:
@@ -47,12 +69,15 @@ def one_line_progress(current, total, extra=""):
         eta_sec = 0.0
 
     eta_str = format_eta(eta_sec)
+    
+    elapsed_str = format_duration(elapsed, order="h_m") 
+
     bar_len = 30
     filled = int(bar_len * pct)
     bar = "#" * filled + "-" * (bar_len - filled)
 
     msg = (f"[{current:>4}/{total:<4}] |{bar}| {pct*100:5.1f}% "
-           f"ETA:{eta_str:>7} Elap:{int(elapsed)}s {extra}")
+           f"ETA:{eta_str:>7} Elap:{elapsed_str:>7} {extra}")
     clear_tail = " " * max(0, _prev_progress_len - len(msg))
 
     sys.stdout.write("\r" + msg + clear_tail)

@@ -4,7 +4,6 @@ import sqlite3
 import cv2
 import numpy as np
 from pathlib import Path
-
 from . import config
 from .config import (
     DEFAULT_DB_PATH, DEFAULT_SRC_FOLDER, DEFAULT_MODEL_PATH,
@@ -30,7 +29,6 @@ def run_pipeline(args):
     model_path = args.model.resolve()
     out_dir    = (args.out or (src_folder / "annotated")).resolve()
     out_dir.mkdir(parents=True, exist_ok=True)
-
     conn = init_db(db_path)
 
     if args.backend.lower() == "cellpose":
@@ -55,14 +53,15 @@ def run_pipeline(args):
     for frame_idx, img_path in enumerate(img_paths, start=1):
         img_name = img_path.name
         img = cv2.imread(str(img_path))
+        
         if img is None:
             continue
+            
         h, w = img.shape[:2]
-
         tiles = tile_image(img, TILE_SIZE, OVERLAP)
         boxes = [(x, y) for x, y, _ in tiles]
-
         polys_per_tile = []
+        
         for (x, y, tile) in tiles:
             coords_list = detector.detect(tile)
             pts = []
@@ -75,12 +74,10 @@ def run_pipeline(args):
         new_polys = stitch_polygons(polys_per_tile, boxes)
         new_polys = merge_overlapping(new_polys)
         new_feats = [poly_features(img, p) for p in new_polys]
-
         matches, unmatched, costs, median_cost, used_relax, continuity, rec_passes = (
             assign_tracks_two_stage(tracks, new_polys, new_feats, frame_idx - 1)
         )
         splits, merges = detect_splits_merges(tracks, new_polys, matches)
-
         lineage_rows = []
         for parent, children in splits:
             for child in children:
@@ -92,6 +89,7 @@ def run_pipeline(args):
                     tracks[parent].generation + 1,
                     'split'
                 ))
+                
         for child, parents in merges:
             for parent in parents:
                 lineage_rows.append((
@@ -102,14 +100,17 @@ def run_pipeline(args):
                     tracks[parent].generation + 1,
                     'merge'
                 ))
+                
         if lineage_rows:
             insert_lineage(conn, lineage_rows)
-
+            
         current_assignments = {}
+        
         for ti, pi, cost in matches:
             tr = tracks[ti]
             tr.update(new_polys[pi], new_feats[pi], matched_iou=1-cost)
             current_assignments[ti] = pi
+            
         for pi in unmatched:
             tr = Track(next_id, new_polys[pi], new_feats[pi])
             tracks.append(tr)
@@ -117,6 +118,7 @@ def run_pipeline(args):
             next_id += 1
 
         dead = [tr for tr in tracks if tr.missed > args.first_n or tr.missed > 5]
+        
         for tr in dead:
             archive_track(tr)
         tracks = [tr for tr in tracks if tr.missed <= args.first_n and tr.missed <= 5]
@@ -126,6 +128,7 @@ def run_pipeline(args):
             1 for tid, det in current_assignments.items()
             if last_assignments.get(tid) not in (None, det)
         )
+        
         total_switches += switches
         last_assignments = current_assignments
 

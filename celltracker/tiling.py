@@ -13,6 +13,7 @@ def tile_image(img, tile_size, overlap):
             y2 = min(y + tile_size, h)
             x2 = min(x + tile_size, w)
             tiles.append((x, y, img[y:y2, x:x2]))
+            
     return tiles
 
 def stitch_polygons(polys_per_tile, tile_boxes):
@@ -24,21 +25,26 @@ def stitch_polygons(polys_per_tile, tile_boxes):
                 all_polys.append(shifted)
             except Exception:
                 continue
+                
     return all_polys
 
 def suppress_duplicates(polys, iou_dup=DUP_IOU_SUPPRESS):
     if not polys:
         return []
     result = []
+    
     for p in polys:
         if p is None or p.is_empty:
             continue
         p = simplify_poly(p)
+        
         if p.area < MIN_AREA:
             continue
+            
         merged = False
         for k, q in enumerate(result):
             iou = compute_iou(p, q)
+            
             if iou > iou_dup:
                 try:
                     u = q.union(p)
@@ -48,14 +54,17 @@ def suppress_duplicates(polys, iou_dup=DUP_IOU_SUPPRESS):
                         break
                 except Exception:
                     pass
+                    
         if not merged:
             result.append(p)
+            
     return result
 
 def merge_overlapping(polys, iou_merge=0.35, max_passes=3):
     if not polys:
         return []
     current = polys[:]
+    
     for _ in range(max_passes):
         used = [False] * len(current)
         new_list = []
@@ -68,8 +77,10 @@ def merge_overlapping(polys, iou_merge=0.35, max_passes=3):
                 if used[j]:
                     continue
                 q = current[j]
+                
                 if q is None or q.is_empty:
                     continue
+                    
                 iou = compute_iou(acc, q)
                 if iou >= iou_merge:
                     try:
@@ -80,9 +91,12 @@ def merge_overlapping(polys, iou_merge=0.35, max_passes=3):
                             changed = True
                     except Exception:
                         pass
+                        
             used[i] = True
             new_list.append(acc)
         current = new_list
+        
         if not changed:
             break
+            
     return current

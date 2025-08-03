@@ -1,9 +1,6 @@
-# scripts/track_cli.py
-
 import argparse
 from pathlib import Path
 from celltracker.config import DEFAULT_DB_PATH, DEBUG_FIRST_N_FRAMES, DEFAULT_BACKEND
-
 from celltracker.pipeline import run_pipeline
 
 def parse_args():
