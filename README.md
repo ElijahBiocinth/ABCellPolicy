@@ -203,7 +203,7 @@ python scripts/track_cli.py \
 #### CLI Arguments (core)
 | Flag         | Description                                     | Default (in `celltracker/config.py`)              |
 |--------------|-------------------------------------------------|---------------------------------------------------|
-| `--backend`  |  `YOLO` or `cellpose`                           | —                                                 |
+| `--backend`  |  `YOLO` or `cellpose`                           | `yolo`                                            |
 | `--db`       | Path to SQLite database                         | `DEFAULT_DB_PATH` (`~/test.sqlite`)               |
 | `--src`      | Folder with source images                       | `DEFAULT_SRC_FOLDER` (`~/Scene_test`)             |
 | `--model`    | YOLO segmentation weights file                  | `DEFAULT_MODEL_PATH_ONLY_YOLO` (`~/weights_yolo.pt`)        |
