@@ -245,7 +245,7 @@ python3 scripts/analyse_cli.py \
 | Flag               | Description                                                      | Default (in `analyser_cli.py`) |
 | ------------------ | ---------------------------------------------------------------- | ------------------------------------------ |
 | `<DB_FILE>…`       | One or more SQLite databases to analyse (supports glob/symlinks) | —                                          |
-| `-o`, `--out-dir`  | Output directory for CSV and PNG результатов                     | `DEFAULT_OUTPUT_DIR` (`"./output"`)        |
+| `-o`, `--out-dir`  | Output directory for CSV and PNG                                 | `DEFAULT_OUTPUT_DIR` (`"./output"`)        |
 | `--static`         | Compute static metrics (area, eccentricity, etc.)                | disabled                                   |
 | `--dynamic`        | Compute dynamic metrics (MSD, directional persistence, etc.)     | disabled                                   |
 | `--stats`          | Run statistical tests (Friedman, Wilcoxon, Tukey HSD)            | disabled                                   |
