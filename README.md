@@ -13,7 +13,7 @@ Although bright-field microscopy is one of the simplest and least invasive metho
 ## The following stages are to be completed over a period of 2025 year:
 
 <h3>
-1. Deriving the A/B Cells Policy as a Robust Multi-Object Cell Pipeline for Time-lapse Microscopy - Submitted to the International Journal of Molecular Sciences (IJMS) on 08/02/2025.
+1. Deriving the A/B Cells Policy as a Robust Multi-Object Cell Pipeline for Time-lapse Microscopy - Submitted to the International Journal of Molecular Sciences (IJMS) on 08/02/2025. Accepted 08/29/2025.
 </h3>
 
 <table align="center">
