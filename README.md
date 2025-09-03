@@ -16,7 +16,7 @@ Although bright-field microscopy is one of the simplest and least invasive metho
 1. Deriving the A/B Cells Policy as a Robust Multi-Object Cell Pipeline for Time-lapse Microscopy
 </h3>
 </h2>
-Larin, I., Panferov, E., Dodina, M., Shaykhutdinova, D., Larina, S., Minskaia, E., & Karabelsky, A. (2025). Deriving the A/B Cells Policy as a Robust Multi-Object Cell Pipeline for Time-Lapse Microscopy. International Journal of Molecular Sciences, 26(17), 8455. https://doi.org/10.3390/ijms26178455
+Larin, I., Panferov, E., Dodina, M., Shaykhutdinova, D., Larina, S., Minskaia, E., & Karabelsky, A. (2025). Deriving the A/B Cells Policy as a Robust Multi-Object Cell Pipeline for Time-Lapse Microscopy. International Journal of Molecular Sciences, 26(17), 8455.
 </h2>
 
 <table align="center">
