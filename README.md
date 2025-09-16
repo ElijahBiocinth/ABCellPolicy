@@ -4,7 +4,7 @@
 
 ![Downloads](https://img.shields.io/pypi/dm/ABCellPolicy.svg)  <!-- dm = downloads/month -->
 ![Visitor Count](https://visitor-badge.laobi.icu/badge?page_id=yourgithubusername.ABCellPolicy.readme&title=visitors)
-![DOI](https://doi.org/10.5281/zenodo.16480754)
+[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.16480754.svg)](https://doi.org/10.5281/zenodo.16480754)
 
 Although bright-field microscopy is one of the simplest and least invasive methods of live-cell imaging, it is often overlooked in favour of fluorescence-based techniques. Using only transmitted light, bright-field illumination captures cell morphology, boundary contours, and gross refractive index variations. This eliminates the need for exogenous labels or dyes. This label-free approach enables the continuous, long-term observation of living cells with minimal phototoxicity or disturbance to normal physiology. In time-lapse experiments, bright-field images provide a robust basis for automated segmentation and centroid tracking, yielding reliable measurements of area, shape, and displacement that can be compared directly across experimental conditions. In practice, the combination of high temporal resolution, gentle illumination and rich morphological content makes bright-field microscopy an ideal tool for the comprehensive quantitative profiling of cell migration dynamics in cell cultures, particularly when paired with advanced tracking pipelines, such as comparing **baseline (A)** vs **perturbation (B)**.
 
